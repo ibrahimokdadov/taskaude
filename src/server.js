@@ -138,6 +138,10 @@ async function _start() {
 
   // Static serving — production only. In dev, Vite dev server serves the frontend.
   if (!isDev) {
+    const distIndex = path.join(__dirname, '../web/dist/index.html')
+    if (!fs.existsSync(distIndex)) {
+      throw new Error('Production build not found. Run `npm run build` first.')
+    }
     app.use(express.static(path.join(__dirname, '../web/dist')))
   }
 
