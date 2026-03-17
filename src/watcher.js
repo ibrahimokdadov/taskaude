@@ -64,7 +64,7 @@ export class FileWatcher extends EventEmitter {
 
     for (const file of existing) {
       if (!file.endsWith('.output')) continue
-      const id = file.replace('.output', '')
+      const id = path.basename(file, '.output')
       const outputPath = path.join(sessionDir, file)
       this.emit('task:new', { id, outputPath })
       try {
@@ -85,6 +85,10 @@ export class FileWatcher extends EventEmitter {
       if (!filePath.endsWith('.output')) return
       const id = path.basename(filePath, '.output')
       this.emit('task:new', { id, outputPath: filePath })
+      try {
+        const output = await fs.promises.readFile(filePath, 'utf8')
+        this.emit('task:update', { id, output })
+      } catch { /* ok */ }
       this._resetIdleTimer(id)
     })
 
