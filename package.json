@@ -4,11 +4,12 @@
   "type": "module",
   "description": "Claude Code background task monitor",
   "bin": {
-    "taskaude": "./bin/taskaude.js"
+    "taskaude": "./dist/taskaude.mjs"
   },
   "scripts": {
     "build": "esbuild bin/taskaude.js --bundle --platform=node --format=esm --loader:.js=jsx --outfile=dist/taskaude.mjs --external:ink --external:react --external:chokidar",
     "start": "npm run build && node dist/taskaude.mjs",
+    "prepare": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest"
   },

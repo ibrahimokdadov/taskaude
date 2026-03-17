@@ -18,10 +18,8 @@ if (!fs.existsSync(baseDir)) {
 const store = new TaskStore()
 const watcher = new FileWatcher()
 
-await watcher.start(baseDir)
-
 const { waitUntilExit } = render(
-  <App store={store} watcher={watcher} />
+  <App store={store} watcher={watcher} baseDir={baseDir} />
 )
 
 await waitUntilExit()

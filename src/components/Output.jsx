@@ -2,7 +2,7 @@ import React from 'react'
 import { Box, Text } from 'ink'
 import { normalizeOutput } from '../utils.js'
 
-const VISIBLE_LINES = 30
+export const VISIBLE_LINES = 30
 
 export function Output({ task, scrollOffset, focused }) {
   if (!task) {

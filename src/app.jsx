@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Box, Text, useInput, useApp } from 'ink'
 import { TaskList } from './components/TaskList.jsx'
-import { Output } from './components/Output.jsx'
+import { Output, VISIBLE_LINES } from './components/Output.jsx'
 
-export function App({ store, watcher }) {
+export function App({ store, watcher, baseDir }) {
   const [tasks, setTasks] = useState([])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [focusPane, setFocusPane] = useState('left')
@@ -33,6 +33,10 @@ export function App({ store, watcher }) {
     watcher.on('error', err => {
       setStatusMsg(`Error: ${err.message}`)
     })
+
+    // Start AFTER registering handlers so no events are missed
+    watcher.start(baseDir).catch(err => setStatusMsg(`Error starting watcher: ${err.message}`))
+
     return () => watcher.close()
   }, [])
 
@@ -49,8 +53,8 @@ export function App({ store, watcher }) {
       return
     }
     if (focusPane === 'left') {
-      if (key.upArrow) setSelectedIndex(i => Math.max(0, i - 1))
-      if (key.downArrow) setSelectedIndex(i => Math.min(tasks.length - 1, i + 1))
+      if (key.upArrow) { setSelectedIndex(i => Math.max(0, i - 1)); setScrollOffset(0) }
+      if (key.downArrow) { setSelectedIndex(i => Math.min(tasks.length - 1, i + 1)); setScrollOffset(0) }
     }
     if (focusPane === 'right') {
       const selected = tasks[selectedIndex]
@@ -61,7 +65,7 @@ export function App({ store, watcher }) {
         refresh()
       }
       const lineCount = selected.output.split('\n').length
-      const maxScroll = Math.max(0, lineCount - 30)
+      const maxScroll = Math.max(0, lineCount - VISIBLE_LINES)
       if (key.upArrow) setScrollOffset(o => Math.max(0, o - 1))
       if (key.downArrow) setScrollOffset(o => Math.min(maxScroll, o + 1))
     }
