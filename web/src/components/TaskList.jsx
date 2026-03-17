@@ -42,17 +42,20 @@ export default function TaskList({ tasks, selectedId, onSelect }) {
                 isSelected ? 'bg-gray-800' : 'hover:bg-gray-900',
               ].join(' ')}
             >
-              {/* Row 1: status icon + task ID */}
+              {/* Row 1: status icon + title (or task ID fallback) */}
               <div className="flex items-center gap-2">
-                <span className={`text-sm ${colorClass}`}>{statusIcon(task.status)}</span>
+                <span className={`text-sm flex-shrink-0 ${colorClass}`}>{statusIcon(task.status)}</span>
                 <span className={`text-sm truncate ${isSelected ? 'text-white font-medium' : 'text-gray-300'}`}>
-                  {task.id}
+                  {task.title ?? task.id}
                 </span>
               </div>
-              {/* Row 2: elapsed + project */}
+              {/* Row 2: elapsed + project + short ID */}
               <div className="flex items-center gap-2 mt-0.5 pl-5">
                 <span className="text-xs text-gray-500">{elapsed}</span>
                 <span className="text-xs text-cyan-700">{task.project}</span>
+                {task.title && (
+                  <span className="text-xs text-gray-600 font-mono truncate">{task.id.slice(0, 8)}</span>
+                )}
               </div>
             </li>
           )

@@ -18,6 +18,7 @@ function serialize(task) {
     id: task.id,
     outputPath: task.outputPath,
     project: task.project,
+    title: task.title ?? null,
     output: normalizeOutput(task.output),
     status: task.status,
     startTime: task.startTime.toISOString(),

@@ -1,3 +1,4 @@
+import fs from 'fs'
 import path from 'path'
 import os from 'os'
 
@@ -47,6 +48,34 @@ export function extractProjectName(outputPath) {
   )
   const parts = projectHash.split('-').filter(Boolean)
   return parts[parts.length - 1] ?? projectHash
+}
+
+// Reads the first user message from an agent-<taskId>.jsonl subagent file.
+// Path: ~/.claude/projects/<project-hash>/*/subagents/agent-<taskId>.jsonl
+// Returns a trimmed string (up to 120 chars) or null if not found.
+export function resolveTaskTitle(outputPath) {
+  const taskId = path.basename(outputPath, '.output')
+  const projectHash = path.basename(path.dirname(path.dirname(path.dirname(outputPath))))
+  const claudeDir = path.join(os.homedir(), '.claude', 'projects', projectHash)
+  try {
+    const sessions = fs.readdirSync(claudeDir)
+    for (const session of sessions) {
+      const jsonlPath = path.join(claudeDir, session, 'subagents', `agent-${taskId}.jsonl`)
+      try {
+        const fd = fs.openSync(jsonlPath, 'r')
+        const buf = Buffer.alloc(4096)
+        const n = fs.readSync(fd, buf, 0, 4096, 0)
+        fs.closeSync(fd)
+        const firstLine = buf.slice(0, n).toString('utf8').split('\n')[0]
+        const obj = JSON.parse(firstLine)
+        const content = obj?.message?.content
+        if (typeof content === 'string' && content.length > 0) {
+          return content.replace(/\n/g, ' ').slice(0, 120).trimEnd()
+        }
+      } catch { /* file missing or unparseable */ }
+    }
+  } catch { /* claudeDir missing */ }
+  return null
 }
 
 export function resolveBaseDir() {
