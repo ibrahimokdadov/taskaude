@@ -4,25 +4,28 @@
   "type": "module",
   "description": "Claude Code background task monitor",
   "bin": {
-    "taskaude": "./dist/taskaude.mjs"
+    "taskaude": "./bin/taskaude.js"
   },
   "scripts": {
-    "build": "esbuild bin/taskaude.js --bundle --platform=node --format=esm --loader:.js=jsx --outfile=dist/taskaude.mjs --external:ink --external:react --external:chokidar",
-    "start": "npm run build && node dist/taskaude.mjs",
-    "prepare": "npm run build",
+    "build": "vite build --config web/vite.config.js",
+    "start": "node bin/taskaude.js",
+    "dev": "concurrently \"NODE_ENV=development node bin/taskaude.js\" \"vite --config web/vite.config.js\"",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
     "chokidar": "^3.6.0",
-    "ink": "^4.4.1",
+    "express": "^4.19.0",
+    "open": "^10.1.0",
     "react": "^18.3.1"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
     "@vitejs/plugin-react": "^4.3.0",
-    "esbuild": "^0.20.0",
-    "esbuild-register": "^3.5.0",
-    "ink-testing-library": "^3.0.0",
+    "concurrently": "^9.0.0",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^4.0.0",
+    "vite": "^5.0.0",
     "vitest": "^1.6.0"
   }
 }
