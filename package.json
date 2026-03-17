@@ -1,0 +1,26 @@
+{
+  "name": "taskaude",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Claude Code background task monitor",
+  "bin": {
+    "taskaude": "./bin/taskaude.js"
+  },
+  "scripts": {
+    "start": "node -r esbuild-register bin/taskaude.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0",
+    "ink": "^4.4.1",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.0",
+    "esbuild": "^0.20.0",
+    "esbuild-register": "^3.5.0",
+    "ink-testing-library": "^3.0.0",
+    "vitest": "^1.6.0"
+  }
+}
