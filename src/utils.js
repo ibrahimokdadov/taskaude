@@ -3,7 +3,8 @@ import os from 'os'
 
 export function normalizeOutput(str) {
   return str
-    .replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
+    .replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')       // CSI sequences
+    .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '') // OSC sequences
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
 }
@@ -11,7 +12,7 @@ export function normalizeOutput(str) {
 const FAIL_PATTERNS = [
   /exit code [1-9]\d*/i,
   /SIGKILL|SIGTERM|SIGSEGV/,
-  /^error:/im,
+  /^error:/im,  // i: case-insensitive (matches ERROR:, Error:); m: anchored to line start in tail
   /npm ERR!/,
   /command not found/i,
 ]

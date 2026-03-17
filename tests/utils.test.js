@@ -20,6 +20,10 @@ describe('normalizeOutput', () => {
   it('handles combined ANSI + CRLF', () => {
     expect(normalizeOutput('\x1b[31mError\x1b[0m\r\nfailed')).toBe('Error\nfailed')
   })
+  it('strips OSC hyperlink sequences', () => {
+    const input = '\x1b]8;;http://example.com\x07link text\x1b]8;;\x07'
+    expect(normalizeOutput(input)).toBe('link text')
+  })
 })
 
 describe('inferStatus', () => {
