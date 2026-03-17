@@ -7,7 +7,8 @@
     "taskaude": "./bin/taskaude.js"
   },
   "scripts": {
-    "start": "node -r esbuild-register bin/taskaude.js",
+    "build": "esbuild bin/taskaude.js --bundle --platform=node --format=esm --loader:.js=jsx --outfile=dist/taskaude.mjs --external:ink --external:react --external:chokidar",
+    "start": "npm run build && node dist/taskaude.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Box, Text, useInput, useWindowSize, useApp } from 'ink'
+import { Box, Text, useInput, useApp } from 'ink'
 import { TaskList } from './components/TaskList.jsx'
 import { Output } from './components/Output.jsx'
 
@@ -10,7 +10,8 @@ export function App({ store, watcher }) {
   const [scrollOffset, setScrollOffset] = useState(0)
   const [statusMsg, setStatusMsg] = useState('')
   const { exit } = useApp()
-  const { columns = 80, rows = 24 } = useWindowSize()
+  const columns = process.stdout.columns ?? 80
+  const rows = process.stdout.rows ?? 24
 
   const refresh = useCallback(() => {
     setTasks([...store.getAll()])
