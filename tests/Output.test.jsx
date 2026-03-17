@@ -44,7 +44,7 @@ describe('Output', () => {
       <Output task={task} scrollOffset={10} focused={false} />
     )
     expect(frame0()).toContain('line 1')
-    expect(frame10()).not.toContain('line 1')
+    expect(frame10()).not.toMatch(/\bline 1\b/)
     expect(frame10()).toContain('line 11')
   })
 })
