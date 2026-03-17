@@ -1,25 +1,15 @@
 #!/usr/bin/env node
-import React from 'react'
-import { render } from 'ink'
-import { App } from '../src/app.jsx'
-import { TaskStore } from '../src/store.js'
-import { FileWatcher } from '../src/watcher.js'
-import { resolveBaseDir } from '../src/utils.js'
-import fs from 'fs'
+import { start } from '../src/server.js'
+import open from 'open'
 
-const baseDir = resolveBaseDir()
-
-if (!fs.existsSync(baseDir)) {
-  console.error(`Claude Code task directory not found: ${baseDir}`)
-  console.error('Make sure Claude Code has been run at least once.')
+let port
+try {
+  port = await start()
+} catch (err) {
+  console.error(`Failed to start taskaude: ${err.message}`)
   process.exit(1)
 }
 
-const store = new TaskStore()
-const watcher = new FileWatcher()
-
-const { waitUntilExit } = render(
-  <App store={store} watcher={watcher} baseDir={baseDir} />
-)
-
-await waitUntilExit()
+console.log(`taskaude running at http://localhost:${port}`)
+await open(`http://localhost:${port}`)
+// Process stays alive because the HTTP server is listening
