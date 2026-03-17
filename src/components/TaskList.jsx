@@ -35,7 +35,8 @@ export function TaskList({ tasks, selectedIndex, focused, width }) {
               </Text>
             </Box>
             <Box marginLeft={isSelected ? 4 : 3}>
-              <Text dimColor>{task.status}  {task.elapsed}</Text>
+              <Text dimColor>{task.status}  {task.elapsed}  </Text>
+              <Text color="cyan" dimColor>{task.project}</Text>
             </Box>
           </Box>
         )
