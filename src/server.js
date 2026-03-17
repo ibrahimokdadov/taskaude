@@ -53,6 +53,9 @@ function findFreePort(start, isDev) {
       return
     }
     function probe(port) {
+      if (port > start + 100) {
+        return reject(new Error(`No free port found in range ${start}–${start + 100}`))
+      }
       const s = net.createServer()
       s.once('error', () => probe(port + 1))
       s.once('listening', () => s.close(() => resolve(port)))
@@ -123,7 +126,7 @@ async function _start() {
     if (!task) return res.status(404).json({ error: 'not found' })
     store.clearOutput(req.params.id)
     const updated = store.get(req.params.id)
-    broadcastEvent(clients, 'task:update', serialize(updated))
+    if (updated) broadcastEvent(clients, 'task:update', serialize(updated))
     res.json({ ok: true })
   })
 
