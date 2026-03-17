@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { TaskStore } from '../src/store.js'
+import fs from 'fs'
 
 // Mock fs so tests don't need real files
 vi.mock('fs', async () => {
@@ -74,5 +75,26 @@ describe('TaskStore', () => {
     store.upsert('a1', '/tmp/a1.output')
     store.upsert('b2', '/tmp/b2.output')
     expect(store.getAll()).toHaveLength(2)
+  })
+
+  describe('reloadAll', () => {
+    it('reloads output from disk and updates status', () => {
+      // Setup: upsert a task
+      store.upsert('abc123', '/tmp/abc123.output')
+      // Force old lastModified so status goes to done
+      store.get('abc123').lastModified = new Date(Date.now() - 10000)
+      // Call reloadAll — should re-read from mock fs (which returns 'test output\n')
+      store.reloadAll()
+      const task = store.get('abc123')
+      expect(task.output).toBe('test output\n')
+      expect(task.status).toBe('done')  // idle + no error patterns = done
+    })
+
+    it('sets status to unknown on file read error', () => {
+      store.upsert('abc123', '/tmp/abc123.output')
+      fs.readFileSync.mockImplementationOnce(() => { throw new Error('ENOENT') })
+      store.reloadAll()
+      expect(store.get('abc123').status).toBe('unknown')
+    })
   })
 })

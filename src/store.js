@@ -53,8 +53,10 @@ export class TaskStore {
   reloadAll() {
     for (const task of this.#tasks.values()) {
       try {
-        task.output = fs.readFileSync(task.outputPath, 'utf8')
+        const output = fs.readFileSync(task.outputPath, 'utf8')
         const stat = fs.statSync(task.outputPath)
+        // Only mutate after both reads succeed
+        task.output = output
         task.lastModified = new Date(stat.mtimeMs)
         task.status = inferStatus(task.lastModified.getTime(), task.output)
       } catch {
