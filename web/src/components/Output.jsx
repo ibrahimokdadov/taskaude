@@ -8,7 +8,7 @@ const STATUS_BADGE = {
   unknown: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
 }
 
-export default function Output({ task }) {
+export default function Output({ task, readOnly = false }) {
   const containerRef = useRef(null)
   // userScrolled: true when the user has scrolled up; suppresses auto-scroll
   const [userScrolled, setUserScrolled] = useState(false)
@@ -58,20 +58,22 @@ export default function Output({ task }) {
           {statusIcon(task.status)} {task.status}
         </span>
         <span className="text-xs text-gray-500">{elapsed}</span>
-        <div className="ml-auto flex gap-2">
-          <button
-            onClick={() => fetch(`/api/tasks/${task.id}/clear`, { method: 'POST' })}
-            className="text-xs px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"
-          >
-            Clear
-          </button>
-          <button
-            onClick={() => fetch('/api/reload', { method: 'POST' })}
-            className="text-xs px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"
-          >
-            Reload All
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="ml-auto flex gap-2">
+            <button
+              onClick={() => fetch(`/api/tasks/${task.id}/clear`, { method: 'POST' })}
+              className="text-xs px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"
+            >
+              Clear
+            </button>
+            <button
+              onClick={() => fetch('/api/reload', { method: 'POST' })}
+              className="text-xs px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"
+            >
+              Reload All
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Output */}
