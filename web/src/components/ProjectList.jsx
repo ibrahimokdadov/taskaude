@@ -16,25 +16,30 @@ export default function ProjectList({ projects, selectedProject, onSelect }) {
         Projects
       </div>
       <ul>
-        {projects.map(({ name, runningCount }) => {
-          const isSelected = name === selectedProject
+        {projects.map(({ name, session, runningCount }) => {
+          const isSelected = selectedProject?.name === name && selectedProject?.session === session
           return (
             <li
-              key={name}
-              onClick={() => onSelect(name)}
+              key={`${name}/${session}`}
+              onClick={() => onSelect({ name, session })}
               className={[
-                'px-3 py-2 cursor-pointer border-b border-gray-800/50 select-none flex items-center justify-between gap-2',
+                'px-3 py-2 cursor-pointer border-b border-gray-800/50 select-none',
                 isSelected ? 'bg-gray-800' : 'hover:bg-gray-900',
               ].join(' ')}
             >
-              <span className={`text-sm truncate ${isSelected ? 'text-white font-medium' : 'text-gray-300'}`}>
-                {name}
-              </span>
-              {runningCount > 0 && (
-                <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 flex-shrink-0">
-                  {runningCount}
+              <div className="flex items-center justify-between gap-2">
+                <span className={`text-sm truncate ${isSelected ? 'text-white font-medium' : 'text-gray-300'}`}>
+                  {name}
                 </span>
-              )}
+                {runningCount > 0 && (
+                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 flex-shrink-0">
+                    {runningCount}
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-gray-600 font-mono mt-0.5 truncate">
+                {session.slice(0, 8)}
+              </div>
             </li>
           )
         })}

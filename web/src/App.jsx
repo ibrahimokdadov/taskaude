@@ -11,27 +11,31 @@ export default function App() {
   // Derive sorted project list and filtered tasks from the task map
   const tasksArray = [...tasks.values()]
 
-  const projects = [...new Set(tasksArray.map(t => t.project))]
-    .sort()
-    .map(name => ({
+  const projects = [...new Map(
+    tasksArray.map(t => [`${t.project}/${t.session}`, { name: t.project, session: t.session }])
+  ).values()]
+    .sort((a, b) => `${a.name}/${a.session}`.localeCompare(`${b.name}/${b.session}`))
+    .map(({ name, session }) => ({
       name,
-      runningCount: tasksArray.filter(t => t.project === name && t.status === 'running').length,
+      session,
+      runningCount: tasksArray.filter(t => t.project === name && t.session === session && t.status === 'running').length,
     }))
 
-  const filteredTasks = tasksArray.filter(t => t.project === selectedProject)
+  const filteredTasks = tasksArray.filter(t => t.project === selectedProject?.name && t.session === selectedProject?.session)
   const selectedTask = tasks.get(selectedId) ?? null
 
-  function autoSelectProject(taskArray, currentProject) {
-    if (currentProject && taskArray.some(t => t.project === currentProject)) {
-      return currentProject
+  function autoSelectProject(taskArray, current) {
+    if (current && taskArray.some(t => t.project === current.name && t.session === current.session)) {
+      return current
     }
-    const names = [...new Set(taskArray.map(t => t.project))].sort()
-    return names[0] ?? null
+    const pairs = [...new Map(taskArray.map(t => [`${t.project}/${t.session}`, { name: t.project, session: t.session }])).values()]
+      .sort((a, b) => `${a.name}/${a.session}`.localeCompare(`${b.name}/${b.session}`))
+    return pairs[0] ?? null
   }
 
   function mergeSingle(task) {
     setTasks(prev => new Map(prev).set(task.id, task))
-    setSelectedProject(prev => prev ?? task.project)
+    setSelectedProject(prev => prev ?? { name: task.project, session: task.session })
     setSelectedId(prev => prev ?? task.id)
   }
 
@@ -71,10 +75,9 @@ export default function App() {
         <ProjectList
           projects={projects}
           selectedProject={selectedProject}
-          onSelect={name => {
-            setSelectedProject(name)
-            // Auto-select first task in newly selected project
-            const first = tasksArray.find(t => t.project === name)
+          onSelect={({ name, session }) => {
+            setSelectedProject({ name, session })
+            const first = tasksArray.find(t => t.project === name && t.session === session)
             setSelectedId(first?.id ?? null)
           }}
         />

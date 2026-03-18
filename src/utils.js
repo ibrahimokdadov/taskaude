@@ -38,6 +38,12 @@ export function statusIcon(status) {
   return { running: '⦿', done: '✓', failed: '✗', unknown: '?' }[status] ?? '?'
 }
 
+// Extracts the session ID from a task output path.
+// Path structure: <base>/<project-hash>/<session-id>/tasks/<id>.output
+export function extractSessionId(outputPath) {
+  return path.basename(path.dirname(path.dirname(outputPath)))
+}
+
 // Extracts a human-readable project name from a task output path.
 // Path structure: <base>/<project-hash>/<session-id>/tasks/<id>.output
 // project-hash encodes the original path with separators replaced by '-'

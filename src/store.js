@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { inferStatus, formatElapsed, extractProjectName, resolveTaskTitle } from './utils.js'
+import { inferStatus, formatElapsed, extractProjectName, extractSessionId, resolveTaskTitle } from './utils.js'
 
 export class TaskStore {
   #tasks = new Map()
@@ -22,6 +22,7 @@ export class TaskStore {
       id,
       outputPath,
       project: extractProjectName(outputPath),
+      session: extractSessionId(outputPath),
       title: resolveTaskTitle(outputPath),
       output,
       status: 'running',
