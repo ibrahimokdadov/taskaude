@@ -37,8 +37,8 @@ export default function ProjectList({ projects, selectedProject, onSelect }) {
                   </span>
                 )}
               </div>
-              <div className="text-xs text-gray-600 font-mono mt-0.5 truncate">
-                {session.slice(0, 8)}
+              <div className="text-xs text-gray-600 font-mono mt-0.5 break-all">
+                {isSelected ? session : session.slice(0, 8)}
               </div>
             </li>
           )

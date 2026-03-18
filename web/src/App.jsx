@@ -70,6 +70,9 @@ export default function App() {
         <span className="text-gray-500 text-xs">
           {tasksArray.length} task{tasksArray.length !== 1 ? 's' : ''}
         </span>
+        <span className="ml-auto text-xs text-gray-600">
+          {new Date().toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+        </span>
       </header>
       <div className="flex flex-row flex-1 overflow-hidden">
         <ProjectList
