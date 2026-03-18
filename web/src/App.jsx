@@ -19,15 +19,31 @@ export default function App() {
   // Derive sorted project list and filtered tasks from the task map
   const tasksArray = [...tasks.values()]
 
-  const projects = [...new Map(
-    tasksArray.map(t => [`${t.project}/${t.session}`, { name: t.project, session: t.session }])
-  ).values()]
-    .sort((a, b) => `${a.name}/${a.session}`.localeCompare(`${b.name}/${b.session}`))
-    .map(({ name, session }) => ({
-      name,
-      session,
-      runningCount: tasksArray.filter(t => t.project === name && t.session === session && t.status === 'running').length,
-    }))
+  // Group tasks by project name, then by session — produces tree structure for ProjectList
+  const sessionsByProject = tasksArray.reduce((acc, t) => {
+    if (!acc[t.project]) acc[t.project] = {}
+    if (!acc[t.project][t.session]) acc[t.project][t.session] = []
+    acc[t.project][t.session].push(t)
+    return acc
+  }, {})
+
+  const projects = Object.entries(sessionsByProject)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, sessionsMap]) => {
+      const sessions = Object.entries(sessionsMap)
+        .map(([session, tasks]) => ({
+          session,
+          date: new Date(Math.max(...tasks.map(t => new Date(t.startTime)))),
+          taskCount: tasks.length,
+          runningCount: tasks.filter(t => t.status === 'running').length,
+        }))
+        .sort((a, b) => b.date - a.date)
+      return {
+        name,
+        sessions,
+        hasRunning: sessions.some(s => s.runningCount > 0),
+      }
+    })
 
   const filteredTasks = tasksArray.filter(t => t.project === selectedProject?.name && t.session === selectedProject?.session)
   const selectedTask = tasks.get(selectedId) ?? null
@@ -37,9 +53,12 @@ export default function App() {
     if (current && taskArray.some(t => t.project === current.name && t.session === current.session)) {
       return current
     }
-    const pairs = [...new Map(taskArray.map(t => [`${t.project}/${t.session}`, { name: t.project, session: t.session }])).values()]
-      .sort((a, b) => `${a.name}/${a.session}`.localeCompare(`${b.name}/${b.session}`))
-    return pairs[0] ?? null
+    // Pick the session with the most recent startTime
+    const latest = taskArray.reduce((best, t) => {
+      if (!best || new Date(t.startTime) > new Date(best.startTime)) return t
+      return best
+    }, null)
+    return latest ? { name: latest.project, session: latest.session } : null
   }
 
   function mergeSingle(task) {
