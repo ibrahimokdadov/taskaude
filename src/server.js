@@ -6,6 +6,7 @@ import express from 'express'
 import { TaskStore } from './store.js'
 import { FileWatcher } from './watcher.js'
 import { resolveBaseDir, normalizeOutput } from './utils.js'
+import * as db from './db.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
@@ -89,6 +90,13 @@ async function _start() {
   const clients = new Set()
   const app = express()
 
+  // Connect to Postgres; gracefully degrade if unavailable
+  try {
+    await db.connect()
+  } catch (err) {
+    console.warn('DB connect failed, running without persistence:', err.message)
+  }
+
   // --- Watcher → store + SSE bridge ---
   watcher.on('task:new', ({ id, outputPath }) => {
     store.upsert(id, outputPath)
@@ -103,12 +111,36 @@ async function _start() {
   watcher.on('task:idle', ({ id }) => {
     store.markIdle(id)
     const task = store.get(id)
-    if (task) broadcastEvent(clients, 'task:idle', serialize(task))
+    if (task) {
+      broadcastEvent(clients, 'task:idle', serialize(task))
+      db.upsert(task).catch(err => console.error('DB upsert failed:', err.message))
+    }
   })
 
   // --- REST endpoints ---
   app.get('/api/tasks', (_req, res) => {
     res.json(store.getAll().map(serialize))
+  })
+
+  app.get('/api/history/days', async (_req, res) => {
+    try {
+      res.json(await db.getDays())
+    } catch (err) {
+      res.status(500).json({ error: err.message })
+    }
+  })
+
+  app.get('/api/history/tasks', async (req, res) => {
+    const { date } = req.query
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: 'date query param required (YYYY-MM-DD)' })
+    }
+    try {
+      const tasks = await db.getTasksByDate(date)
+      res.json(tasks.map(serialize))
+    } catch (err) {
+      res.status(500).json({ error: err.message })
+    }
   })
 
   // SSE stream — keeps connection open, pushes events as watcher fires them.
