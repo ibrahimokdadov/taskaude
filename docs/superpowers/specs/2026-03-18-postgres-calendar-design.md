@@ -18,7 +18,7 @@ Out of scope: output streaming to DB (only final state persisted), multi-user au
 
 ## Database
 
-**Connection:** `localhost:5432`, user `postgres`, password `admin`, database `taskaude` (auto-created on first run if missing).
+**Connection:** `localhost:5432`, user `postgres`, password `admin`, database controlled by `PGDATABASE` env var (default `taskaude`). Tests set `PGDATABASE=taskaude_test` to avoid touching the production DB. The database is auto-created on first run if missing.
 
 **Schema** — single table, created with `CREATE TABLE IF NOT EXISTS` on startup:
 
@@ -48,12 +48,12 @@ CREATE INDEX IF NOT EXISTS tasks_date_idx ON tasks (DATE(start_time AT TIME ZONE
 
 ### New: `src/db.js`
 
-Owns the pg connection pool and all DB operations. Exports:
+Owns the pg connection pool (module-scoped) and all DB operations. Exports:
 
-- `connect()` — creates pool (`postgres`/`admin`/`taskaude`), runs `CREATE TABLE IF NOT EXISTS`, returns pool. Throws if connection fails.
-- `upsert(task)` — `INSERT ... ON CONFLICT (id) DO UPDATE` with all fields. Called after task:idle.
-- `getDays()` — returns `[{ date: 'YYYY-MM-DD', count: number }]` for all days that have tasks, ordered descending.
-- `getTasksByDate(dateStr)` — returns all task rows where `DATE(start_time AT TIME ZONE 'UTC') = $1`, ordered by `start_time ASC`.
+- `connect()` — creates pool (`postgres`/`admin`/`$PGDATABASE`), runs `CREATE TABLE IF NOT EXISTS`. Throws if connection fails. Pool is stored in module scope — callers do not hold a reference to it.
+- `upsert(task)` — accepts the store's camelCase task object and maps to snake_case columns internally before issuing `INSERT ... ON CONFLICT (id) DO UPDATE`. Mapping: `outputPath → output_path`, `startTime → start_time`, `lastModified → last_modified`.
+- `getDays()` — returns `[{ date: 'YYYY-MM-DD', count: number }]` for all days that have tasks, ordered descending. Returns the full set for all time; month filtering is done client-side.
+- `getTasksByDate(dateStr)` — returns task rows where `DATE(start_time AT TIME ZONE 'UTC') = $1`, ordered by `start_time ASC`. Rows are returned in camelCase (mapped from snake_case columns) so they can pass directly through `serialize()`.
 
 ### `src/server.js`
 
@@ -61,7 +61,7 @@ Owns the pg connection pool and all DB operations. Exports:
 - On `task:idle`: after `store.markIdle(id)`, call `db.upsert(store.get(id))` (fire-and-forget, log errors).
 - Two new REST endpoints:
   - `GET /api/history/days` → `db.getDays()`
-  - `GET /api/history/tasks?date=YYYY-MM-DD` → `db.getTasksByDate(date)`
+  - `GET /api/history/tasks?date=YYYY-MM-DD` — validates `date` matches `/^\d{4}-\d{2}-\d{2}$/`, returns 400 if absent or malformed. On valid input: `db.getTasksByDate(date)` returns camelCase rows which are passed through `serialize()` before responding, ensuring the frontend receives the same shape as live tasks.
 
 ---
 
@@ -80,7 +80,7 @@ Unchanged from current behaviour.
 Left panel replaced by `CalendarPanel`. Middle + right panels reuse existing `TaskList` and `Output` components unchanged.
 
 `App.jsx` new state in calendar mode:
-- `calendarDays: { date, count }[]` — loaded from `/api/history/days` on mount and on tab switch
+- `calendarDays: { date, count }[]` — loaded from `/api/history/days` once on tab switch (full history). Month navigation in `CalendarPanel` filters this array client-side — no additional fetches per month.
 - `selectedDate: string | null` — the date string clicked in the grid
 - `historyTasks: task[]` — loaded from `/api/history/tasks?date=...` when `selectedDate` changes
 - `selectedHistoryId: string | null` — selected task in calendar view
@@ -118,12 +118,13 @@ Add `pg` package: `npm install pg`
 
 ### `tests/db.test.js`
 
-Integration tests against a real local Postgres instance (`taskaude_test` database):
+Integration tests against a real local Postgres instance. Tests set `process.env.PGDATABASE = 'taskaude_test'` before importing `db.js`, and drop/recreate the table in `beforeEach` to ensure isolation.
+
 - `connect()` creates the table
-- `upsert()` inserts a task row
+- `upsert()` inserts a task row (verify camelCase→snake_case mapping round-trips correctly)
 - `upsert()` on same ID updates the row
 - `getDays()` returns correct date entries
-- `getTasksByDate()` returns tasks for the given date only
+- `getTasksByDate()` returns tasks for the given date only, not other dates
 
 ### `tests/CalendarPanel.test.jsx`
 
