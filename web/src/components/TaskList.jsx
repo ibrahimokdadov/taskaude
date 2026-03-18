@@ -49,10 +49,9 @@ export default function TaskList({ tasks, selectedId, onSelect }) {
                   {task.title ?? task.id}
                 </span>
               </div>
-              {/* Row 2: elapsed + project + short ID */}
+              {/* Row 2: elapsed + short ID */}
               <div className="flex items-center gap-2 mt-0.5 pl-5">
                 <span className="text-xs text-gray-500">{elapsed}</span>
-                <span className="text-xs text-cyan-700">{task.project}</span>
                 {task.title && (
                   <span className="text-xs text-gray-600 font-mono truncate">{task.id.slice(0, 8)}</span>
                 )}
