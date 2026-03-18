@@ -4,7 +4,7 @@ import os from 'os'
 import fs from 'fs'
 import { FileWatcher } from '../src/watcher.js'
 
-describe('FileWatcher.resolveActiveSession', () => {
+describe('FileWatcher.resolveAllSessions', () => {
   let tmpDir
   let watcher
 
@@ -18,29 +18,37 @@ describe('FileWatcher.resolveActiveSession', () => {
     watcher.close()
   })
 
-  it('returns null when base dir is empty', async () => {
-    const result = await watcher.resolveActiveSession(tmpDir)
-    expect(result).toBeNull()
+  it('returns empty array when base dir is empty', async () => {
+    const result = await watcher.resolveAllSessions(tmpDir)
+    expect(result).toEqual([])
   })
 
-  it('returns the tasks dir of the most recently modified session', async () => {
+  it('returns all session task dirs across all projects', async () => {
     const session1 = path.join(tmpDir, 'proj-a', 'sess-1', 'tasks')
-    const session2 = path.join(tmpDir, 'proj-a', 'sess-2', 'tasks')
+    const session2 = path.join(tmpDir, 'proj-b', 'sess-1', 'tasks')
     fs.mkdirSync(session1, { recursive: true })
     fs.mkdirSync(session2, { recursive: true })
 
-    // Write a file to session2 to make it newer
-    fs.writeFileSync(path.join(session1, 'task1.output'), 'output1')
-    await new Promise(r => setTimeout(r, 10))
-    fs.writeFileSync(path.join(session2, 'task2.output'), 'output2')
-
-    const result = await watcher.resolveActiveSession(tmpDir)
-    expect(result).toBe(session2)
+    const result = await watcher.resolveAllSessions(tmpDir)
+    expect(result).toHaveLength(2)
+    expect(result).toContain(session1)
+    expect(result).toContain(session2)
   })
 
-  it('returns null when base dir does not exist', async () => {
-    const result = await watcher.resolveActiveSession('/nonexistent/path/xyz')
-    expect(result).toBeNull()
+  it('returns empty array when base dir does not exist', async () => {
+    const result = await watcher.resolveAllSessions('/nonexistent/path/xyz')
+    expect(result).toEqual([])
+  })
+
+  it('skips project entries that have no sessions with a tasks dir', async () => {
+    // proj-a has a tasks dir; proj-b has a session dir but no tasks subdir
+    const session1 = path.join(tmpDir, 'proj-a', 'sess-1', 'tasks')
+    fs.mkdirSync(session1, { recursive: true })
+    fs.mkdirSync(path.join(tmpDir, 'proj-b', 'sess-1'), { recursive: true })
+
+    const result = await watcher.resolveAllSessions(tmpDir)
+    expect(result).toHaveLength(1)
+    expect(result).toContain(session1)
   })
 })
 

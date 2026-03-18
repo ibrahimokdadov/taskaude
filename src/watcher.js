@@ -13,12 +13,12 @@ export class FileWatcher extends EventEmitter {
     this.#idleMs = idleMs
   }
 
-  async resolveActiveSession(baseDir) {
+  async resolveAllSessions(baseDir) {
     let projectEntries
     try {
       projectEntries = await fs.promises.readdir(baseDir)
     } catch {
-      return null
+      return []
     }
 
     const sessionDirs = []
@@ -35,47 +35,35 @@ export class FileWatcher extends EventEmitter {
       }
     }
 
-    if (!sessionDirs.length) return null
-
-    const withMtime = await Promise.all(
-      sessionDirs.map(async dir => {
-        try {
-          const stat = await fs.promises.stat(dir)
-          return { dir, mtime: stat.mtimeMs }
-        } catch {
-          return { dir, mtime: 0 }
-        }
-      })
-    )
-    withMtime.sort((a, b) => b.mtime - a.mtime)
-    return withMtime[0].dir
+    return sessionDirs
   }
 
   async start(baseDir) {
-    const sessionDir = await this.resolveActiveSession(baseDir)
-    if (!sessionDir) {
+    const sessionDirs = await this.resolveAllSessions(baseDir)
+    if (!sessionDirs.length) {
       this.emit('error', new Error(`No Claude Code tasks found under ${baseDir}`))
       return
     }
 
-    // Load existing files
-    let existing
-    try { existing = await fs.promises.readdir(sessionDir) } catch { existing = [] }
-
-    for (const file of existing) {
-      if (!file.endsWith('.output')) continue
-      const id = path.basename(file, '.output')
-      const outputPath = path.join(sessionDir, file)
-      this.emit('task:new', { id, outputPath })
-      try {
-        const output = await fs.promises.readFile(outputPath, 'utf8')
-        this.emit('task:update', { id, output })
-      } catch { /* ok */ }
-      this._resetIdleTimer(id)
+    // Load existing files from all session dirs
+    for (const sessionDir of sessionDirs) {
+      let existing
+      try { existing = await fs.promises.readdir(sessionDir) } catch { continue }
+      for (const file of existing) {
+        if (!file.endsWith('.output')) continue
+        const id = path.basename(file, '.output')
+        const outputPath = path.join(sessionDir, file)
+        this.emit('task:new', { id, outputPath })
+        try {
+          const output = await fs.promises.readFile(outputPath, 'utf8')
+          this.emit('task:update', { id, output })
+        } catch { /* ok */ }
+        this._resetIdleTimer(id)
+      }
     }
 
     const isWindows = process.platform === 'win32'
-    this.#watcher = chokidar.watch(sessionDir, {
+    this.#watcher = chokidar.watch(sessionDirs, {
       ignoreInitial: true,
       usePolling: isWindows,
       interval: isWindows ? 500 : undefined,
