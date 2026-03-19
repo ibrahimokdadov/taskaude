@@ -1,3 +1,7 @@
 node_modules/
 .superpowers/
 dist/
+web/dist/
+scripts/frames/
+.env
+.env.local

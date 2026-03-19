@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url'
 import express from 'express'
 import { TaskStore } from './store.js'
 import { FileWatcher } from './watcher.js'
-import { resolveBaseDir, normalizeOutput } from './utils.js'
+import { resolveBaseDir, normalizeOutputRaw } from './utils.js'
 import * as db from './db.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
@@ -21,7 +21,7 @@ function serialize(task) {
     project: task.project,
     session: task.session,
     title: task.title ?? null,
-    output: normalizeOutput(task.output),
+    output: normalizeOutputRaw(task.output),
     status: task.status,
     startTime: task.startTime.toISOString(),
     lastModified: task.lastModified.toISOString(),

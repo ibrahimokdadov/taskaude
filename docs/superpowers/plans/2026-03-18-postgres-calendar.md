@@ -55,7 +55,7 @@ const db = await import('../src/db.js')
 // Separate pool for test cleanup — bypasses db.js module scope
 const cleanPool = new pg.Pool({
   host: 'localhost', port: 5432,
-  user: 'postgres', password: 'admin',
+  user: 'postgres', password: process.env.PGPASSWORD ?? '',
   database: 'taskaude_test',
 })
 
@@ -155,7 +155,7 @@ export async function connect() {
   // Auto-create the database if it doesn't exist
   const admin = new pg.Pool({
     host: 'localhost', port: 5432,
-    user: 'postgres', password: 'admin',
+    user: 'postgres', password: process.env.PGPASSWORD ?? '',
     database: 'postgres',
   })
   try {
@@ -171,7 +171,7 @@ export async function connect() {
 
   pool = new pg.Pool({
     host: 'localhost', port: 5432,
-    user: 'postgres', password: 'admin',
+    user: 'postgres', password: process.env.PGPASSWORD ?? '',
     database: dbName,
   })
 

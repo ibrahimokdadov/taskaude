@@ -7,8 +7,10 @@ const db = await import('../src/db.js')
 
 // Separate pool for test cleanup — bypasses db.js module scope
 const cleanPool = new pg.Pool({
-  host: 'localhost', port: 5432,
-  user: 'postgres', password: 'admin',
+  host: process.env.PGHOST ?? 'localhost',
+  port: parseInt(process.env.PGPORT ?? '5432'),
+  user: process.env.PGUSER ?? 'postgres',
+  password: process.env.PGPASSWORD ?? '',
   database: 'taskaude_test',
 })
 

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>taskaude demo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    background: #030712;
+    color: #e5e7eb;
+    width: 900px;
+    height: 580px;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    border-bottom: 1px solid #1f2937;
+    background: #111827;
+    height: 40px;
+  }
+  .header-logo { color: #60a5fa; font-weight: 700; font-size: 13px; letter-spacing: 0.05em; }
+  .header-count { color: #6b7280; font-size: 11px; }
+  .header-tabs { display: flex; gap: 4px; margin-left: 12px; }
+  .tab {
+    font-size: 11px; padding: 3px 12px; border-radius: 4px; cursor: pointer;
+    border: 1px solid #374151; color: #6b7280; font-family: inherit;
+    text-transform: capitalize;
+  }
+  .tab.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .header-date { margin-left: auto; font-size: 11px; color: #374151; }
+
+  /* Body */
+  .body { display: flex; height: calc(580px - 40px); }
+
+  /* Left panel */
+  .left {
+    width: 192px; flex-shrink: 0;
+    border-right: 1px solid #1f2937;
+    overflow-y: auto;
+  }
+  .panel-title {
+    padding: 8px 12px;
+    font-size: 10px; color: #4b5563;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    border-bottom: 1px solid #1f2937;
+  }
+  .project-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; cursor: pointer;
+    border-bottom: 1px solid rgba(31,41,55,0.5);
+    user-select: none;
+  }
+  .project-row:hover { background: #111827; }
+  .project-row.selected { background: rgba(55,65,81,0.6); }
+  .chevron {
+    color: #4b5563; font-size: 9px; flex-shrink: 0;
+    transition: transform 0.15s;
+    display: inline-block;
+  }
+  .chevron.open { transform: rotate(90deg); }
+  .project-name { font-size: 13px; flex: 1; truncate: true; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .project-name.active { color: #fff; font-weight: 600; }
+  .project-name.inactive { color: #d1d5db; }
+  .running-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #60a5fa; flex-shrink: 0;
+  }
+  .sessions-list { }
+  .session-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px 6px 28px; cursor: pointer;
+    border-left: 2px solid transparent;
+  }
+  .session-row:hover { background: rgba(55,65,81,0.5); }
+  .session-row.selected {
+    background: rgba(37,99,235,0.2);
+    border-left-color: #3b82f6;
+  }
+  .session-meta { flex: 1; min-width: 0; }
+  .session-date { font-size: 11px; color: #9ca3af; }
+  .session-date.selected { color: #93c5fd; font-weight: 600; }
+  .session-id { font-size: 9px; color: #374151; font-family: monospace; margin-top: 2px; word-break: break-all; }
+  .running-badge {
+    font-size: 9px; padding: 1px 4px; border-radius: 3px;
+    background: rgba(37,99,235,0.2); color: #60a5fa;
+    border: 1px solid rgba(59,130,246,0.3);
+  }
+  .session-count { font-size: 9px; color: #4b5563; flex-shrink: 0; }
+
+  /* Middle panel */
+  .middle {
+    width: 240px; flex-shrink: 0;
+    border-right: 1px solid #1f2937;
+    overflow-y: auto;
+  }
+  .task-row {
+    padding: 10px 12px; cursor: pointer;
+    border-bottom: 1px solid rgba(31,41,55,0.5);
+  }
+  .task-row:hover { background: #111827; }
+  .task-row.selected { background: #1f2937; }
+  .task-row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+  .task-title { font-size: 12px; color: #e5e7eb; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 160px; }
+  .task-title.running { color: #fff; }
+  .status-badge {
+    font-size: 10px; padding: 1px 6px; border-radius: 4px; border: 1px solid; flex-shrink: 0;
+  }
+  .status-running { background: rgba(59,130,246,0.2); color: #60a5fa; border-color: rgba(59,130,246,0.3); }
+  .status-done { background: rgba(34,197,94,0.2); color: #4ade80; border-color: rgba(34,197,94,0.3); }
+  .status-failed { background: rgba(239,68,68,0.2); color: #f87171; border-color: rgba(239,68,68,0.3); }
+  .task-row-bot { display: flex; gap: 6px; align-items: center; }
+  .task-elapsed { font-size: 10px; color: #6b7280; }
+  .task-id-small { font-size: 9px; color: #374151; font-family: monospace; }
+
+  /* Right panel */
+  .right { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .output-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 16px; border-bottom: 1px solid #1f2937;
+    background: rgba(17,24,39,0.5); flex-shrink: 0;
+  }
+  .output-title { font-size: 13px; color: #e5e7eb; font-weight: 500; max-width: 200px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .output-elapsed { font-size: 11px; color: #6b7280; }
+  .output-actions { margin-left: auto; display: flex; gap: 8px; }
+  .output-btn {
+    font-size: 11px; padding: 3px 8px; border-radius: 4px;
+    background: #1f2937; color: #9ca3af; border: none; cursor: pointer;
+    font-family: inherit;
+  }
+  .output-body {
+    flex: 1; overflow-y: auto; padding: 16px;
+    font-size: 11px; color: #d1d5db; line-height: 1.6;
+    white-space: pre-wrap; word-break: break-all;
+  }
+  .output-body .dim { color: #4b5563; }
+  .output-body .green { color: #4ade80; }
+  .output-body .blue { color: #60a5fa; }
+  .output-body .yellow { color: #fbbf24; }
+  .output-body .red { color: #f87171; }
+
+  /* Cursor blink */
+  .cursor { display: inline-block; width: 7px; height: 13px; background: #60a5fa; vertical-align: text-bottom; animation: blink 1s step-end infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* Pulse animation for running dot */
+  .pulse { animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* Highlight for new task */
+  @keyframes highlight { 0%{background:rgba(37,99,235,0.3)} 100%{background:transparent} }
+  .new-task { animation: highlight 1s ease-out; }
+</style>
+</head>
+<body>
+
+<!-- FRAME DATA — JS drives which frame is shown -->
+<div class="header">
+  <span class="header-logo">taskaude</span>
+  <span class="header-count" id="hcount">8 tasks</span>
+  <div class="header-tabs">
+    <button class="tab active" id="tab-live">live</button>
+    <button class="tab" id="tab-cal">calendar</button>
+  </div>
+  <span class="header-date">Thu, Mar 19, 2026</span>
+</div>
+
+<div class="body">
+  <!-- LEFT -->
+  <div class="left">
+    <div class="panel-title">Projects</div>
+    <div id="project-list"></div>
+  </div>
+
+  <!-- MIDDLE -->
+  <div class="middle">
+    <div id="task-list"></div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <div class="output-header" id="output-header">
+      <span class="output-title" id="output-title">—</span>
+      <span class="status-badge status-running" id="output-badge" style="display:none"></span>
+      <span class="output-elapsed" id="output-elapsed"></span>
+      <div class="output-actions">
+        <button class="output-btn">Clear</button>
+        <button class="output-btn">Reload All</button>
+      </div>
+    </div>
+    <div class="output-body" id="output-body"></div>
+  </div>
+</div>
+
+<script>
+const PROJECTS = [
+  {
+    name: 'api-gateway',
+    hasRunning: true,
+    sessions: [
+      { session: 'c3f8a1b2-4d9e-4f0a-8c1d-2e3f4a5b6c7d', date: 'Today', taskCount: 3, runningCount: 1 },
+      { session: 'a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d', date: 'Mar 17', taskCount: 2, runningCount: 0 },
+    ]
+  },
+  {
+    name: 'data-pipeline',
+    hasRunning: false,
+    sessions: [
+      { session: 'f7e6d5c4-b3a2-1f0e-9d8c-7b6a5f4e3d2c', date: 'Yesterday', taskCount: 4, runningCount: 0 },
+    ]
+  },
+  {
+    name: 'taskaude',
+    hasRunning: true,
+    sessions: [
+      { session: '789fdc27-e811-416f-9900-0f68445bb39d', date: 'Today', taskCount: 2, runningCount: 1 },
+    ]
+  },
+]
+
+const TASKS = {
+  'c3f8a1b2/0': { id: 'task-001', title: 'Implement rate limiter', status: 'running', elapsed: '4m 12s' },
+  'c3f8a1b2/1': { id: 'task-002', title: 'Write auth middleware', status: 'done', elapsed: '12m 45s' },
+  'c3f8a1b2/2': { id: 'task-003', title: 'Add JWT validation', status: 'done', elapsed: '8m 03s' },
+  'a1b2c3d4/0': { id: 'task-004', title: 'Refactor route handlers', status: 'done', elapsed: '22m 11s' },
+  'a1b2c3d4/1': { id: 'task-005', title: 'Fix CORS headers', status: 'failed', elapsed: '3m 59s' },
+  'f7e6d5c4/0': { id: 'task-006', title: 'Migrate postgres schema', status: 'done', elapsed: '15m 30s' },
+  'f7e6d5c4/1': { id: 'task-007', title: 'Backfill user records', status: 'done', elapsed: '9m 22s' },
+  'f7e6d5c4/2': { id: 'task-008', title: 'Add index on events.ts', status: 'done', elapsed: '2m 44s' },
+  'f7e6d5c4/3': { id: 'task-009', title: 'Update seed data', status: 'done', elapsed: '4m 01s' },
+  '789fdc27/0': { id: 'task-010', title: 'Add calendar view', status: 'running', elapsed: '7m 55s' },
+  '789fdc27/1': { id: 'task-011', title: 'Wire postgres persistence', status: 'done', elapsed: '11m 08s' },
+}
+
+const OUTPUTS = {
+  'task-001': [
+    '<span class="dim">$ node src/rateLimiter.js</span>',
+    '',
+    '<span class="blue">→ Analyzing request patterns...</span>',
+    '<span class="dim">  sliding window: 100 req / 60s</span>',
+    '<span class="dim">  burst allowance: 20 req / 1s</span>',
+    '',
+    '<span class="green">✓ Redis connection established</span>',
+    '<span class="green">✓ Middleware registered on /api/*</span>',
+    '',
+    '<span class="yellow">⚡ Writing tests...</span>',
+    '<span class="dim">  test: respects per-IP limit</span>',
+    '<span class="dim">  test: allows burst within window</span>',
+    '<span class="dim">  test: returns 429 on exceed</span>',
+    '',
+    '<span class="blue">→ Running test suite...</span> <span class="cursor"></span>',
+  ],
+  'task-010': [
+    '<span class="dim">$ node scripts/calendar-wiring.js</span>',
+    '',
+    '<span class="blue">→ Reading App.jsx...</span>',
+    '<span class="green">✓ Parsed component tree</span>',
+    '',
+    '<span class="blue">→ Adding view state...</span>',
+    '<span class="dim">  useState("live") → view</span>',
+    '<span class="dim">  useState([]) → calendarDays</span>',
+    '',
+    '<span class="green">✓ CalendarPanel wired to /api/history/days</span>',
+    '<span class="green">✓ History tasks load on date select</span>',
+    '',
+    '<span class="yellow">⚡ Building production bundle...</span> <span class="cursor"></span>',
+  ],
+  'task-006': [
+    '<span class="dim">$ psql taskaude < migrations/001_schema.sql</span>',
+    '',
+    '<span class="blue">→ Connecting to postgres...</span>',
+    '<span class="green">✓ Connected: localhost:5432/taskaude</span>',
+    '',
+    '<span class="dim">CREATE TABLE tasks (</span>',
+    '<span class="dim">  id TEXT PRIMARY KEY,</span>',
+    '<span class="dim">  output_path TEXT,</span>',
+    '<span class="dim">  project TEXT,</span>',
+    '<span class="dim">  session TEXT,</span>',
+    '<span class="dim">  status TEXT,</span>',
+    '<span class="dim">  start_time TIMESTAMPTZ</span>',
+    '<span class="dim">);</span>',
+    '',
+    '<span class="green">✓ Migration complete — 0 rows affected</span>',
+  ],
+}
+
+// State
+let selectedProject = { name: 'api-gateway', session: 'c3f8a1b2-4d9e-4f0a-8c1d-2e3f4a5b6c7d' }
+let selectedTaskId = 'task-001'
+let expanded = new Set(['api-gateway', 'taskaude'])
+
+function getTasksForSession(sessionPrefix) {
+  return Object.entries(TASKS)
+    .filter(([k]) => k.startsWith(sessionPrefix))
+    .map(([,v]) => v)
+}
+
+function renderLeft() {
+  const el = document.getElementById('project-list')
+  el.innerHTML = ''
+  PROJECTS.forEach(proj => {
+    const isOpen = expanded.has(proj.name)
+    const isProjSelected = selectedProject.name === proj.name
+
+    // Project row
+    const row = document.createElement('div')
+    row.className = 'project-row' + (isProjSelected ? ' selected' : '')
+    row.innerHTML = `
+      <span class="chevron ${isOpen ? 'open' : ''}">▶</span>
+      <span class="project-name ${isProjSelected ? 'active' : 'inactive'}">${proj.name}</span>
+      ${proj.hasRunning ? '<span class="running-dot pulse"></span>' : ''}
+    `
+    row.onclick = () => {
+      if (expanded.has(proj.name)) expanded.delete(proj.name)
+      else expanded.add(proj.name)
+      if (!isProjSelected) {
+        selectedProject = { name: proj.name, session: proj.sessions[0].session }
+        const pfx = proj.sessions[0].session.slice(0,8)
+        const tasks = getTasksForSession(pfx)
+        selectedTaskId = tasks[0]?.id
+      }
+      render()
+    }
+    el.appendChild(row)
+
+    if (isOpen) {
+      const ul = document.createElement('div')
+      ul.className = 'sessions-list'
+      proj.sessions.forEach(sess => {
+        const isSelected = selectedProject.name === proj.name && selectedProject.session === sess.session
+        const sr = document.createElement('div')
+        sr.className = 'session-row' + (isSelected ? ' selected' : '')
+        sr.innerHTML = `
+          <div class="session-meta">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span class="session-date ${isSelected ? 'selected' : ''}">${sess.date}</span>
+              ${sess.runningCount > 0 ? `<span class="running-badge">${sess.runningCount} running</span>` : ''}
+            </div>
+            <div class="session-id">${sess.session}</div>
+          </div>
+          <span class="session-count">${sess.taskCount}</span>
+        `
+        sr.onclick = (e) => {
+          e.stopPropagation()
+          selectedProject = { name: proj.name, session: sess.session }
+          const pfx = sess.session.slice(0,8)
+          const tasks = getTasksForSession(pfx)
+          selectedTaskId = tasks[0]?.id
+          render()
+        }
+        ul.appendChild(sr)
+      })
+      el.appendChild(ul)
+    }
+  })
+}
+
+function renderMiddle() {
+  const pfx = selectedProject.session.slice(0,8)
+  const tasks = getTasksForSession(pfx)
+  const el = document.getElementById('task-list')
+  el.innerHTML = ''
+  tasks.forEach(t => {
+    const isSelected = t.id === selectedTaskId
+    const row = document.createElement('div')
+    row.className = 'task-row' + (isSelected ? ' selected' : '')
+    const badgeClass = t.status === 'running' ? 'status-running' : t.status === 'done' ? 'status-done' : 'status-failed'
+    const icon = t.status === 'running' ? '⟳' : t.status === 'done' ? '✓' : '✗'
+    row.innerHTML = `
+      <div class="task-row-top">
+        <span class="task-title ${t.status === 'running' ? 'running' : ''}">${t.title}</span>
+        <span class="status-badge ${badgeClass}">${icon} ${t.status}</span>
+      </div>
+      <div class="task-row-bot">
+        <span class="task-elapsed">${t.elapsed}</span>
+        <span class="task-id-small">${t.id}</span>
+      </div>
+    `
+    row.onclick = () => { selectedTaskId = t.id; render() }
+    el.appendChild(row)
+  })
+}
+
+function renderRight() {
+  const task = Object.values(TASKS).find(t => t.id === selectedTaskId)
+  if (!task) return
+  document.getElementById('output-title').textContent = task.title
+  const badge = document.getElementById('output-badge')
+  badge.style.display = 'inline'
+  badge.className = 'status-badge ' + (task.status === 'running' ? 'status-running' : task.status === 'done' ? 'status-done' : 'status-failed')
+  const icon = task.status === 'running' ? '⟳' : task.status === 'done' ? '✓' : '✗'
+  badge.textContent = icon + ' ' + task.status
+  document.getElementById('output-elapsed').textContent = task.elapsed
+
+  const lines = OUTPUTS[task.id] || ['<span class="dim">No output captured.</span>']
+  document.getElementById('output-body').innerHTML = lines.join('\n')
+}
+
+function render() {
+  renderLeft()
+  renderMiddle()
+  renderRight()
+}
+
+render()
+</script>
+</body>
+</html>

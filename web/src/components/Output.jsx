@@ -1,5 +1,13 @@
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useEffect, useState, useMemo } from 'react'
+import AnsiToHtml from 'ansi-to-html'
 import { formatElapsed, statusIcon } from '../utils.js'
+
+const ansiConverter = new AnsiToHtml({
+  fg: '#d1d5db',
+  bg: '#030712',
+  escapeXML: true,
+  stream: false,
+})
 
 const STATUS_BADGE = {
   running: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
@@ -37,6 +45,11 @@ export default function Output({ task, readOnly = false }) {
     const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 20
     setUserScrolled(!atBottom)
   }
+
+  const coloredOutput = useMemo(() => {
+    if (!task?.output) return null
+    try { return ansiConverter.toHtml(task.output) } catch { return task.output }
+  }, [task?.output])
 
   if (!task) {
     return (
@@ -77,16 +90,21 @@ export default function Output({ task, readOnly = false }) {
       </div>
 
       {/* Output */}
-      <pre
-        ref={containerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-auto p-4 text-xs text-gray-300 whitespace-pre-wrap break-words leading-relaxed"
-      >
-        {task.output
-          ? task.output
-          : <span className="text-gray-600">No output yet.</span>
-        }
-      </pre>
+      {coloredOutput
+        ? <pre
+            ref={containerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-auto p-4 text-xs text-gray-300 whitespace-pre-wrap break-words leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: coloredOutput }}
+          />
+        : <pre
+            ref={containerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-auto p-4 text-xs text-gray-600 whitespace-pre-wrap break-words leading-relaxed"
+          >
+            No output yet.
+          </pre>
+      }
     </div>
   )
 }

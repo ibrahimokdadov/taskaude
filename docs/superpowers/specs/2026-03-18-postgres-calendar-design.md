@@ -18,7 +18,7 @@ Out of scope: output streaming to DB (only final state persisted), multi-user au
 
 ## Database
 
-**Connection:** `localhost:5432`, user `postgres`, password `admin`, database controlled by `PGDATABASE` env var (default `taskaude`). Tests set `PGDATABASE=taskaude_test` to avoid touching the production DB. The database is auto-created on first run if missing.
+**Connection:** `localhost:5432`, user `postgres`, password via `PGPASSWORD` env var, database controlled by `PGDATABASE` env var (default `taskaude`). Tests set `PGDATABASE=taskaude_test` to avoid touching the production DB. The database is auto-created on first run if missing.
 
 **Schema** — single table, created with `CREATE TABLE IF NOT EXISTS` on startup:
 

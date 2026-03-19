@@ -10,6 +10,15 @@ export function normalizeOutput(str) {
     .replace(/\r/g, '\n')
 }
 
+// Like normalizeOutput but keeps ANSI color codes intact — used when the
+// frontend will render them via ansi-to-html.
+export function normalizeOutputRaw(str) {
+  return str
+    .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '') // strip OSC only (hyperlinks etc.)
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+}
+
 const FAIL_PATTERNS = [
   /exit code [1-9]\d*/i,
   /SIGKILL|SIGTERM|SIGSEGV/,

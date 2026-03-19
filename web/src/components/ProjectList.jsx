@@ -102,8 +102,8 @@ export default function ProjectList({ projects, selectedProject, onSelect }) {
                               </span>
                             )}
                           </div>
-                          <div className="text-[10px] text-gray-700 font-mono truncate mt-0.5">
-                            {session.slice(0, 12)}
+                          <div className="text-[10px] text-gray-700 font-mono break-all mt-0.5">
+                            {session}
                           </div>
                         </div>
                         <span className="text-[10px] text-gray-600 flex-shrink-0">

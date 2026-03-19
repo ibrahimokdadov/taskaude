@@ -7,8 +7,10 @@ export async function connect() {
 
   // Auto-create the database if it doesn't exist
   const admin = new pg.Pool({
-    host: 'localhost', port: 5432,
-    user: 'postgres', password: 'admin',
+    host: process.env.PGHOST ?? 'localhost',
+    port: parseInt(process.env.PGPORT ?? '5432'),
+    user: process.env.PGUSER ?? 'postgres',
+    password: process.env.PGPASSWORD ?? '',
     database: 'postgres',
   })
   try {
@@ -23,8 +25,10 @@ export async function connect() {
   if (pool) await pool.end().catch(() => {})
 
   pool = new pg.Pool({
-    host: 'localhost', port: 5432,
-    user: 'postgres', password: 'admin',
+    host: process.env.PGHOST ?? 'localhost',
+    port: parseInt(process.env.PGPORT ?? '5432'),
+    user: process.env.PGUSER ?? 'postgres',
+    password: process.env.PGPASSWORD ?? '',
     database: dbName,
   })
 
